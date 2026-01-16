@@ -19,8 +19,8 @@ El proyecto está dividido en ramas según el ejercicio:
 
 ### ⚙️ Configuración de Red
 * **Modo de Red VirtualBox:** Adaptador Puente (Bridged Adapter).
-* **Dirección IP de la VM:** `[PON TU IP AQUÍ]` (Ej: 192.168.1.45)
-* **Puerto de Escucha:** `6000`
+* **Dirección IP de la VM:** 192.168.1.203
+* **Puerto de Escucha:** 6000
 
 ### 📝 Cómo obtuve la IP
 Para obtener la dirección IP de la máquina virtual, utilicé el siguiente comando en la terminal de Linux Lite:

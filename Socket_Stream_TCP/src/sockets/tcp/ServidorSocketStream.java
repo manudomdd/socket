@@ -17,7 +17,7 @@ public class ServidorSocketStream {
 
             System.out.println("Realizando el bind");
 
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
+            InetSocketAddress addr = new InetSocketAddress("0.0.0.0", 6000);
             serverSocket.bind(addr);
 
             System.out.println("Aceptando conexiones");

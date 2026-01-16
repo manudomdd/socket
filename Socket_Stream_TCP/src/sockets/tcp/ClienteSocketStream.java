@@ -15,7 +15,7 @@ public class ClienteSocketStream {
 
             System.out.println("Estableciendo la conexión");
 
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
+            InetSocketAddress addr = new InetSocketAddress("192.168.1.203", 6000);
             clientSocket.connect(addr);
 
             InputStream is = clientSocket.getInputStream();
@@ -23,7 +23,7 @@ public class ClienteSocketStream {
 
             System.out.println("Enviando mensaje");
 
-            String mensaje = "mensaje desde el cliente";
+            String mensaje = "hola";
             os.write(mensaje.getBytes());
 
             System.out.println("Mensaje enviado");

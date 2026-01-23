@@ -35,19 +35,28 @@ public class AppServerSocket
     		PrintWriter salida = new PrintWriter(client.getOutputStream(), true);
     		//Para recibir datos al cliente <<<
     		BufferedReader entrada = new BufferedReader(new InputStreamReader(client.getInputStream()));
-    	
     		
-    		String datoRec, datoEnv;
+    		String nombre = entrada.readLine(); 
+    		System.out.println("Jugador identificado: " + nombre); 
+    		salida.println(saludar(nombre));  
+    		
+    		int intentos = 0; 
+    		String datoRec; 
     		
     		//leeremos todos los mensajes recibidos
     		//comprobamos si es el número mágico
     		while((datoRec = entrada.readLine())!= null) {
-  
-    			datoEnv = checkNumero(datoRec);
+    			intentos++; 
+    			String respuesta = checkNumero(datoRec, intentos);
     			
     			//Retornamos al cliente el resultado 
     			//de la comprobación
-    			salida.println(datoEnv);
+    			salida.println(respuesta);
+    			
+    			if (respuesta.startsWith("CORRECTO")) {
+    				System.out.println("Juego terminado. Ganador: " + nombre); 
+    				break; 
+    			}
     		}
     		
     	}catch(IOException e) {
@@ -64,22 +73,31 @@ public class AppServerSocket
 		
 			System.out.println("IP:" + clientIP + ", HostName: "+ hostName);
 	}
-	private static String checkNumero(String datoRec) {
+	private static String checkNumero(String datoRec, int intentos) {
 		try {
 			int numero = Integer.parseInt(datoRec);
 			
-			if(numero > numGen) {
+			if (numero == numGen) {
+				return "¡CORRECTO!. Has adivinado el numero en " + intentos + " intentos"; 
+			} else if(numero > numGen) {
 				return "<server>El número es mayor que el número mágico";
-			}else if(numero < numGen) {
+			} else {
 				return "<server>El número es menor que el número mágico";
-			}else {
-				return "<server>Ha adivinado el número";
 			}
 			
 			
 		}catch(NumberFormatException e) {
-			return "<Server>Por favor, introduzca un número";
+			return "<Server>ERROR: " + datoRec + " no es un numero. Escribe un numero: ";
 		}
 		
 	}
+
+
+    private static String saludar(String nombre) {
+        return "Hola " + nombre + " que comience el juego";
+    }
 }
+    
+    
+
+

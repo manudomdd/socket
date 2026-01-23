@@ -5,49 +5,48 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.rmi.UnknownHostException;
+import java.net.UnknownHostException;
 
-/**
- * Hello world!
- *
- */
-public class AppCliente 
-{
-	static final int  PORT = 7777;
-	
-    public static void main( String[] args )
-    {
-    	
-        try {
-        	//conectamos con el servidor
-        	Socket socket = new Socket("localhost",PORT);
-        	
-        	//Para enviar datos al server
-        	PrintWriter salida = new PrintWriter(socket.getOutputStream(), true);
-        	
-        	//Para recibir respuestas del servidor
-        	BufferedReader entradaSocket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        	//Leer los datos introducidos por consola
-        	BufferedReader entradaConsola = new BufferedReader(new InputStreamReader(System.in));
-        	
-        	System.out.println("<Cliente>Inserte un número: ");
-        	//Leemos de consola y enviamos al server
-        	salida.println(entradaConsola.readLine());
-        	
-        	String datoRec;
-        	while((datoRec = entradaSocket.readLine()) != null){
-        		//Mostrar el dato recibido por consola
-        		System.out.println(datoRec);
-        		// Leer la consola y enviar al server
-        		salida.println(entradaConsola.readLine());
-        	}
-        	
-        	
-        }catch(UnknownHostException ex) {
-        	
+public class AppCliente {
+    
+    static final int PORT = 7777; // Asegúrate de que coincida con el servidor
+    static final String IP = "192.168.1.204"; // Tu IP correcta
+
+    public static void main(String[] args) {
+        
+        try (Socket socket = new Socket(IP, PORT);
+             PrintWriter salida = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader entradaSocket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             BufferedReader entradaConsola = new BufferedReader(new InputStreamReader(System.in))) {
+            
+            // 1. PRIMER PASO: Saludo inicial (solo se hace una vez)
+            System.out.print("<Cliente> Introduce tu nombre: "); 
+            String nombre = entradaConsola.readLine();
+            salida.println(nombre); // Enviamos el nombre al servidor
+
+            String mensajeDelServidor;
+            
+            while ((mensajeDelServidor = entradaSocket.readLine()) != null) {
+                
+                System.out.println("<Servidor>: " + mensajeDelServidor);
+
+                // Si el servidor nos corta la conexión o se despide, salimos
+                if (mensajeDelServidor.contains("Fin") || mensajeDelServidor.contains("CORRECTO")) {
+                    break;
+                }
+
+                // B. Solo ahora pedimos al usuario que escriba
+                System.out.print("<Cliente> Escribe un numero:");
+                String respuesta = entradaConsola.readLine();
+                
+                // C. Enviamos la respuesta al servidor
+                salida.println(respuesta);
+            }
+            
+        } catch (UnknownHostException ex) {
+            System.err.println("No se encuentra el servidor.");
         } catch (IOException e) {
-			
-			e.printStackTrace();
-		}
+            System.err.println("Error de conexión: " + e.getMessage());
+        }
     }
 }

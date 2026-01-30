@@ -13,8 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Servidor TCP que atiende clientes mediante un hilo por conexión.
- * Sirve HTML básico y saluda al usuario si se indica su nombre en la URL.
+ * Servidor TCP Multihilo con diseño HTML mejorado.
+ * Detecta el nombre en la URL pero aún no incluye /status.
  */
 public class HiloPorClienteServidor implements Runnable {
 
@@ -39,7 +39,7 @@ public class HiloPorClienteServidor implements Runnable {
             try {
                 Socket clientSocket = this.serversocket.accept();
 
-                // MULTIHILO: Creamos un hilo nuevo por cada cliente
+                // MULTIHILO
                 new Thread(() -> {
                     try {
                         processClientRequest(clientSocket);
@@ -62,7 +62,6 @@ public class HiloPorClienteServidor implements Runnable {
     private void processClientRequest(Socket clientSocket) throws IOException {
         try (clientSocket;
              InputStream in = clientSocket.getInputStream();
-             // Usamos UTF-8 para leer bien los caracteres especiales del nombre
              BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
              OutputStream out = clientSocket.getOutputStream()) {
 
@@ -82,40 +81,29 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
-            // --- LÓGICA DE MEJORA: NOMBRE EN URL ---
+            // --- LÓGICA DEL NOMBRE ---
             String nombre = "Invitado";
-            // Si la ruta es mayor que 1 (ej: "/Pepe"), extraemos el nombre
             if (path.length() > 1) {
-                String nombreRaw = path.substring(1); // Quitamos la barra "/"
+                String nombreRaw = path.substring(1);
                 nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
             }
 
-            // Datos básicos para el HTML
-            String clientIp = clientSocket.getInetAddress().getHostAddress();
-            int clientPort = clientSocket.getPort();
+            // Datos técnicos para mostrar
             String remote = clientSocket.getRemoteSocketAddress().toString();
             long time = System.currentTimeMillis();
             String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
 
-            // HTML BÁSICO (Sin mejoras visuales high-end todavía)
-            String body = "<html>"
-                    + "<head>"
-                    + "<link rel='icon' href='/favicon.ico'>"
-                    + "<title>Programación de Servicios y Procesos</title>"
-                    + "</head>"
-                    + "<body style='background-color: coral;'>"
-                    // Aquí inyectamos el nombre decodificado
-                    + "<h1 style='color:white;'>¡Hola, " + nombre + "!</h1>"
-                    + "<h3 style='color:blue;'>Servidor OK</h3>"
-                    + "<p>Path original: " + path + "</p>"
-                    + "<p>Server Time: " + fecha + "</p>"
-                    + "<p>Hilo: " + Thread.currentThread().getName() + "</p>"
-                    + "<p>Cliente IP: " + clientIp + "</p>"
-                    + "<p>Cliente puerto: " + clientPort + "</p>"
-                    + "<p>Remote: " + remote + "</p>"
-                    + "</body></html>";
+            // Preparamos el mensaje con los datos técnicos
+            String infoDetallada = String.format(
+                "Path: %s<br>Hora: %s<br>Hilo: %s<br>Cliente: %s",
+                path, fecha, Thread.currentThread().getName(), remote
+            );
 
-            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+            // --- AQUÍ APLICAMOS LA MEJORA VISUAL (HTML HIGH-END) ---
+            // Usamos la función auxiliar para generar el HTML bonito
+            String responseBody = getHighEndTemplate(true, "¡Hola, " + nombre + "!", infoDetallada);
+
+            byte[] bodyBytes = responseBody.getBytes(StandardCharsets.UTF_8);
 
             String headers =
                     "HTTP/1.1 200 OK\r\n" +
@@ -129,8 +117,38 @@ public class HiloPorClienteServidor implements Runnable {
             out.flush();
 
             System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
-            System.out.println("[" + Thread.currentThread().getName() + "] Saludando a: " + nombre);
         }
+    }
+
+    /**
+     * MEJORA VISUAL: Genera el HTML avanzado con estilos CSS incrustados.
+     */
+    private String getHighEndTemplate(boolean success, String titulo, String mensaje) {
+        String accentColor = success ? "#00f260" : "#ff4b1f"; 
+        String gradient = success 
+            ? "linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)"
+            : "linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29)";
+        String icon = success ? "✓" : "✕";
+        String glowColor = success ? "0, 242, 96" : "255, 75, 31";
+
+        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>" +
+               "<title>Java MultiThread Server</title>" +
+               "<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap' rel='stylesheet'>" +
+               "<style>" +
+               "body { font-family: 'Inter', sans-serif; height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; background: " + gradient + "; background-size: 400% 400%; animation: g 15s ease infinite; color: white; overflow: hidden; }" +
+               "@keyframes g { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }" +
+               ".card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.2); padding: 3rem; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-width: 500px; width: 90%; }" +
+               ".icon { font-size: 5rem; color: " + accentColor + "; text-shadow: 0 0 20px rgba(" + glowColor + ", 0.6); margin-bottom: 1rem; }" +
+               "h1 { font-weight: 900; margin-bottom: 1rem; letter-spacing: -1px; }" +
+               "p { line-height: 1.6; opacity: 0.9; font-size: 1.1rem; }" +
+               "code { font-family: 'JetBrains Mono'; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 5px; color: #ffd700; }" +
+               ".footer { margin-top: 2rem; font-size: 0.7rem; opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; }" +
+               "</style></head><body><div class='card'>" +
+               "<div class='icon'>" + icon + "</div>" +
+               "<h1>" + titulo + "</h1>" +
+               "<p>" + mensaje + "</p>" +
+               "<div class='footer'>Thread-per-Client Architecture • Java 2026</div>" +
+               "</div></body></html>";
     }
 
     private void serveFavicon(OutputStream out) throws IOException {

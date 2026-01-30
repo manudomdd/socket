@@ -12,7 +12,7 @@ public class Main {
 		new Thread(server).start();
 		System.out.println("Start server http://localhost:"+PORT);
 		try {
-			Thread.sleep(10 * 10000);
+			Thread.sleep(10000 * 10000);
 		}catch(InterruptedException ex) {
 			System.err.print(ex);
 		}

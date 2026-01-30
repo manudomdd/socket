@@ -13,8 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Servidor TCP Multihilo con diseño HTML mejorado.
- * Detecta el nombre en la URL pero aún no incluye /status.
+ * Servidor TCP Multihilo Final.
+ * Incluye: Hilo por cliente, HTML High-End, detección de nombre y endpoint /status.
  */
 public class HiloPorClienteServidor implements Runnable {
 
@@ -39,7 +39,7 @@ public class HiloPorClienteServidor implements Runnable {
             try {
                 Socket clientSocket = this.serversocket.accept();
 
-                // MULTIHILO
+                // MULTIHILO: Cada cliente se procesa en paralelo
                 new Thread(() -> {
                     try {
                         processClientRequest(clientSocket);
@@ -81,32 +81,51 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
-            // --- LÓGICA DEL NOMBRE ---
-            String nombre = "Invitado";
-            if (path.length() > 1) {
+            // --- LÓGICA DE ENDPOINTS (STATUS + NOMBRE) ---
+            String responseBody;
+            String status = "200 OK";
+            String remote = clientSocket.getRemoteSocketAddress().toString();
+
+            if (path.equalsIgnoreCase("/status")) {
+                // MEJORA 2: Endpoint de Estado del Sistema
+                Runtime rt = Runtime.getRuntime();
+                long totalMem = rt.totalMemory() / (1024 * 1024);
+                long freeMem = rt.freeMemory() / (1024 * 1024);
+                long usedMem = totalMem - freeMem;
+
+                String stats = String.format(
+                    "Estado: <b>Operativo</b><br>" +
+                    "Memoria usada: <code>%d MB</code><br>" +
+                    "Hilos activos: <code>%d</code><br>" +
+                    "ID Hilo actual: <code>%s</code><br>" +
+                    "Tu IP: <code>%s</code>",
+                    usedMem,
+                    Thread.activeCount(), // Evidencia de concurrencia
+                    Thread.currentThread().getName(),
+                    remote
+                );
+                
+                responseBody = getHighEndTemplate(true, "Monitor del Sistema", stats);
+
+            } else if (path.length() > 1) {
+                // MEJORA 1: Detección de nombre en URL
                 String nombreRaw = path.substring(1);
-                nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
+                String nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
+                
+                String info = "Petición procesada correctamente.<br>Conexión desde: " + remote;
+                responseBody = getHighEndTemplate(true, "¡Hola, " + nombre + "!", info);
+
+            } else {
+                // Ruta raíz o desconocida (404)
+                status = "404 Not Found";
+                responseBody = getHighEndTemplate(false, "404 - Ruta desconocida", 
+                    "Por favor, añade tu nombre a la URL (ej: /Pepe) o visita <code>/status</code>");
             }
 
-            // Datos técnicos para mostrar
-            String remote = clientSocket.getRemoteSocketAddress().toString();
-            long time = System.currentTimeMillis();
-            String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
-
-            // Preparamos el mensaje con los datos técnicos
-            String infoDetallada = String.format(
-                "Path: %s<br>Hora: %s<br>Hilo: %s<br>Cliente: %s",
-                path, fecha, Thread.currentThread().getName(), remote
-            );
-
-            // --- AQUÍ APLICAMOS LA MEJORA VISUAL (HTML HIGH-END) ---
-            // Usamos la función auxiliar para generar el HTML bonito
-            String responseBody = getHighEndTemplate(true, "¡Hola, " + nombre + "!", infoDetallada);
-
+            // Enviar respuesta
             byte[] bodyBytes = responseBody.getBytes(StandardCharsets.UTF_8);
-
             String headers =
-                    "HTTP/1.1 200 OK\r\n" +
+                    "HTTP/1.1 " + status + "\r\n" +
                     "Content-Type: text/html; charset=UTF-8\r\n" +
                     "Content-Length: " + bodyBytes.length + "\r\n" +
                     "Connection: close\r\n" +
@@ -116,12 +135,13 @@ public class HiloPorClienteServidor implements Runnable {
             out.write(bodyBytes);
             out.flush();
 
-            System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
+            // Log en consola
+            System.out.println("[" + Thread.currentThread().getName() + "] Path: " + path + " | Status: " + status);
         }
     }
 
     /**
-     * MEJORA VISUAL: Genera el HTML avanzado con estilos CSS incrustados.
+     * Plantilla HTML High-End con CSS y animaciones.
      */
     private String getHighEndTemplate(boolean success, String titulo, String mensaje) {
         String accentColor = success ? "#00f260" : "#ff4b1f"; 

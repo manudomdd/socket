@@ -21,10 +21,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Tests de Integración para el Servidor TCP Multihilo.
- * Cumple con los requisitos obligatorios:
- * - C1: Test de ruta normal (/nombre/Ana).
- * - C2: Test de ruta desconocida (404).
- * - C2: Test de concurrencia (2 clientes simultáneos).
+ * Verifica los requisitos:
+ * - C1: Ruta normal (/nombre/Ana).
+ * - C2: Ruta desconocida (404).
+ * - C2: Concurrencia (2 clientes simultáneos).
  */
 class HiloPorClienteServidorTest {
 
@@ -34,17 +34,17 @@ class HiloPorClienteServidorTest {
 
     @BeforeEach
     void startServer() throws Exception {
-        // 1. Buscamos un puerto libre automático para evitar choques
+        // 1. Buscamos un puerto libre automático para evitar conflictos
         try (ServerSocket tmp = new ServerSocket(0)) {
             port = tmp.getLocalPort();
         }
 
-        // 2. Arrancamos tu servidor HiloPorClienteServidor en un hilo aparte
+        // 2. Arrancamos el servidor en un hilo aparte
         server = new HiloPorClienteServidor(port);
         serverThread = new Thread(server, "test-server");
         serverThread.start();
 
-        // 3. Esperamos a que el servidor esté listo (evita falsos fallos)
+        // 3. Esperamos a que el servidor esté listo
         waitUntilListening("127.0.0.1", port, 1000);
     }
 
@@ -55,7 +55,7 @@ class HiloPorClienteServidorTest {
         serverThread.join(1000);
     }
 
-    // --- TEST C1 (Obligatorio): RUTA NORMAL ---
+    // --- TEST C1: RUTA NORMAL ---
     @Test
     @DisplayName("GET /nombre/Ana devuelve 200 OK y saludo personalizado")
     @Timeout(value = 2, unit = TimeUnit.SECONDS)
@@ -65,11 +65,11 @@ class HiloPorClienteServidorTest {
 
         // Assert 1: Código 200
         assertTrue(response.contains("200 OK"), "Debe devolver código 200 OK");
-        // Assert 2: Contenido esperado (tu HTML High-End)
+        // Assert 2: Contenido esperado
         assertTrue(response.contains("Ana"), "El HTML debe contener el nombre solicitado (Ana)");
     }
 
-    // --- TEST C2 (Obligatorio): ERROR 404 ---
+    // --- TEST C2: ERROR 404 ---
     @Test
     @DisplayName("GET /ruta-inventada devuelve 404 Not Found")
     @Timeout(value = 2, unit = TimeUnit.SECONDS)
@@ -83,7 +83,7 @@ class HiloPorClienteServidorTest {
         assertTrue(response.contains("Ruta desconocida"), "Debe indicar 'Ruta desconocida' en el HTML");
     }
 
-    // --- TEST C2 (Obligatorio): CONCURRENCIA ---
+    // --- TEST C2: CONCURRENCIA ---
     @Test
     @DisplayName("Dos clientes simultáneos reciben respuesta correcta")
     @Tag("concurrency")

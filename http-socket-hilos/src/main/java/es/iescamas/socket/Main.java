@@ -14,7 +14,7 @@ package es.iescamas.socket;
 public class Main {
 		
 	/** Puerto TCP donde escuchará el servidor. */
-	final static int PORT = 9001; // He ajustado esto a 9001 para coincidir con tu servidor
+	final static int PORT = 9001;
 	
 	/** * Tiempo de ejecución del servidor en segundos. 
 	 * 100000 segundos = aprox 27 horas.
@@ -23,7 +23,7 @@ public class Main {
 	
 	/**
 	 * Método principal que arranca la aplicación.
-	 * * @param args Argumentos de la línea de comandos (no utilizados en esta versión).
+	 * @param args Argumentos de la línea de comandos (no utilizados en esta versión).
 	 */
 	public static void main(String[] args) {
 		// Creamos el servidor indicando el puerto.
@@ -47,5 +47,4 @@ public class Main {
 		System.out.println("Tiempo agotado. Deteniendo servidor...");
 		server.stop();
 	}
-
 }

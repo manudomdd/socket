@@ -1,1 +1,1 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"es.iescamas.socket","l":"HiloPorClienteServidor"},{"p":"es.iescamas.socket","l":"Main"}];updateSearchResults();
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"es.iescamas.socket","l":"HiloPorClienteServidor"},{"p":"es.iescamas.socket","l":"HiloPorClienteServidorTest"},{"p":"es.iescamas.socket","l":"Main"}];updateSearchResults();

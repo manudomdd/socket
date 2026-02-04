@@ -109,6 +109,7 @@ public class HiloPorClienteServidor implements Runnable {
             String status = "200 OK";
             String remote = clientSocket.getRemoteSocketAddress().toString();
 
+            // --- LÓGICA DE ENDPOINTS CORREGIDA PARA PASAR TESTS ---
             if (path.equalsIgnoreCase("/status")) {
                 Runtime rt = Runtime.getRuntime();
                 long totalMem = rt.totalMemory() / (1024 * 1024);
@@ -129,17 +130,21 @@ public class HiloPorClienteServidor implements Runnable {
                 
                 responseBody = getHighEndTemplate(true, "Monitor del Sistema", stats);
 
-            } else if (path.length() > 1) {
-                String nombreRaw = path.substring(1);
+            // CORRECCIÓN: Ahora validamos estrictamente que empiece por "/nombre/"
+            } else if (path.startsWith("/nombre/")) {
+                
+                // Extraemos el nombre cortando los primeros 8 caracteres ("/nombre/")
+                String nombreRaw = path.substring(8);
                 String nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
                 
                 String info = "Petición procesada correctamente.<br>Conexión desde: " + remote;
                 responseBody = getHighEndTemplate(true, "¡Hola, " + nombre + "!", info);
 
             } else {
+                // Ruta desconocida -> Error 404 (Esto satisface el test de JUnit)
                 status = "404 Not Found";
                 responseBody = getHighEndTemplate(false, "404 - Ruta desconocida", 
-                    "Por favor, añade tu nombre a la URL (ej: /Pepe) o visita <code>/status</code>");
+                    "Por favor, añade tu nombre a la URL (ej: /nombre/Pepe) o visita <code>/status</code>");
             }
 
             byte[] bodyBytes = responseBody.getBytes(StandardCharsets.UTF_8);

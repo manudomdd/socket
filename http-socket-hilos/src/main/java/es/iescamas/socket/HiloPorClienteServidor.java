@@ -9,12 +9,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
- * Servidor TCP Multihilo Final.
- * Incluye: Hilo por cliente, HTML High-End, detección de nombre y endpoint /status.
+ * Servidor TCP Multihilo que gestiona peticiones HTTP de forma concurrente.
+ * <p>
+ * Implementa una arquitectura "Thread-per-Client" para servir contenido HTML
+ * dinámico, detectar rutas con nombres y monitorizar el estado del sistema.
+ * </p>
+ *
+ * @author Manuel Dominguez
+ * @version 1.0
+ * @since 2026-01
  */
 public class HiloPorClienteServidor implements Runnable {
 
@@ -23,6 +28,11 @@ public class HiloPorClienteServidor implements Runnable {
     protected boolean isStopped;
     protected Thread runningThread = null;
 
+    /**
+     * Constructor que inicializa el servidor en un puerto específico.
+     *
+     * @param serverPort El puerto TCP donde escuchará el servidor (ej: 9001).
+     */
     public HiloPorClienteServidor(int serverPort) {
         this.serverPort = serverPort;
     }
@@ -39,7 +49,6 @@ public class HiloPorClienteServidor implements Runnable {
             try {
                 Socket clientSocket = this.serversocket.accept();
 
-                // MULTIHILO: Cada cliente se procesa en paralelo
                 new Thread(() -> {
                     try {
                         processClientRequest(clientSocket);
@@ -59,6 +68,21 @@ public class HiloPorClienteServidor implements Runnable {
         System.out.println("Server Stopped");
     }
 
+    /**
+     * Procesa la petición HTTP enviada por el cliente.
+     * <p>
+     * Analiza la primera línea de la cabecera para determinar la ruta solicitada
+     * y genera una respuesta HTML con estilos CSS avanzados.
+     * </p>
+     *
+     * @param clientSocket El socket conectado al cliente que realizó la petición.
+     * @throws IOException Si ocurre un error de lectura/escritura en el socket.
+     * @apiNote Ejemplo de uso y rutas admitidas:
+     * <pre>
+     * http://localhost:9001/nombre/Ana  -> Saludo personalizado
+     * http://localhost:9001/status      -> Monitor del sistema
+     * </pre>
+     */
     private void processClientRequest(Socket clientSocket) throws IOException {
         try (clientSocket;
              InputStream in = clientSocket.getInputStream();
@@ -81,13 +105,11 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
-            // --- LÓGICA DE ENDPOINTS (STATUS + NOMBRE) ---
             String responseBody;
             String status = "200 OK";
             String remote = clientSocket.getRemoteSocketAddress().toString();
 
             if (path.equalsIgnoreCase("/status")) {
-                // MEJORA 2: Endpoint de Estado del Sistema
                 Runtime rt = Runtime.getRuntime();
                 long totalMem = rt.totalMemory() / (1024 * 1024);
                 long freeMem = rt.freeMemory() / (1024 * 1024);
@@ -100,7 +122,7 @@ public class HiloPorClienteServidor implements Runnable {
                     "ID Hilo actual: <code>%s</code><br>" +
                     "Tu IP: <code>%s</code>",
                     usedMem,
-                    Thread.activeCount(), // Evidencia de concurrencia
+                    Thread.activeCount(),
                     Thread.currentThread().getName(),
                     remote
                 );
@@ -108,7 +130,6 @@ public class HiloPorClienteServidor implements Runnable {
                 responseBody = getHighEndTemplate(true, "Monitor del Sistema", stats);
 
             } else if (path.length() > 1) {
-                // MEJORA 1: Detección de nombre en URL
                 String nombreRaw = path.substring(1);
                 String nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
                 
@@ -116,13 +137,11 @@ public class HiloPorClienteServidor implements Runnable {
                 responseBody = getHighEndTemplate(true, "¡Hola, " + nombre + "!", info);
 
             } else {
-                // Ruta raíz o desconocida (404)
                 status = "404 Not Found";
                 responseBody = getHighEndTemplate(false, "404 - Ruta desconocida", 
                     "Por favor, añade tu nombre a la URL (ej: /Pepe) o visita <code>/status</code>");
             }
 
-            // Enviar respuesta
             byte[] bodyBytes = responseBody.getBytes(StandardCharsets.UTF_8);
             String headers =
                     "HTTP/1.1 " + status + "\r\n" +
@@ -135,14 +154,10 @@ public class HiloPorClienteServidor implements Runnable {
             out.write(bodyBytes);
             out.flush();
 
-            // Log en consola
             System.out.println("[" + Thread.currentThread().getName() + "] Path: " + path + " | Status: " + status);
         }
     }
 
-    /**
-     * Plantilla HTML High-End con CSS y animaciones.
-     */
     private String getHighEndTemplate(boolean success, String titulo, String mensaje) {
         String accentColor = success ? "#00f260" : "#ff4b1f"; 
         String gradient = success 
@@ -190,6 +205,11 @@ public class HiloPorClienteServidor implements Runnable {
         catch (IOException ex) { throw new RuntimeException("Cannot open port " + serverPort, ex); }
     }
 
+    /**
+     * Verifica si el servidor ha recibido la orden de detenerse.
+     *
+     * @return true si el servidor está parado o deteniéndose; false si sigue activo.
+     */
     private synchronized boolean isStopped() { return isStopped; }
 
     public synchronized void stop() {

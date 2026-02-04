@@ -28,7 +28,9 @@ public class SingleThreadedServer implements Runnable {
             Socket clientSocket = null;
             try {
                 clientSocket = this.serversocket.accept();
-                processClientRequest(clientSocket);
+                new Thread(() -> {
+                    processClientRequest(clientSocket);
+                }), "client" + clientSocket.getPort().start(); 
             } catch (IOException e) {
                 if (isStopped()) {
                     System.out.println("Servidor detenido.");
@@ -55,10 +57,9 @@ public class SingleThreadedServer implements Runnable {
 
             if (path.equals("/favicon.ico")) {
                  clientSocket.close();
-                 return;
+                 return;processClientRequest
             }
 
-            // --- MEJORA: ENDPOINT DE ESTADO DEL SISTEMA ---
             if (path.equalsIgnoreCase("/status")) {
                 isSuccess = true;
                 Runtime rt = Runtime.getRuntime();
@@ -78,7 +79,6 @@ public class SingleThreadedServer implements Runnable {
                 responseBody = getHighEndTemplate(isSuccess, "Panel de Control", stats);
 
             } else if (path.length() > 1) {
-                // Tu endpoint original de bienvenida
                 String nombreRaw = path.substring(1);
                 String nombre = URLDecoder.decode(nombreRaw, StandardCharsets.UTF_8);
                 nombre = nombre.substring(0, 1).toUpperCase() + nombre.substring(1).toLowerCase();
